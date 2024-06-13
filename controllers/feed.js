@@ -24,13 +24,20 @@ exports.postPosts = (req, res, next) => {
     error.statusCode = 422
     throw error
   }
+
+  if (!req.file) {
+    const error = new Error('No image provided')
+    error.statusCode = 422
+    throw error
+  }
+  const imageUrl = req.file.path
   const title = req.body.title;
   const content = req.body.content;
 
   const post = new Post({
     title,
     content,
-    imageUrl:'images/travel.jpg',
+    imageUrl:imageUrl,
     creator: {
       name: "Faith",
     },
@@ -65,4 +72,20 @@ exports.getPost = (req, res, next) =>{
     }
     next(err)
   })
+}
+
+exports.updatePost = (req, res, next) =>{
+  const postId = req.params.postId
+  const title = req.body.title;
+  const content = req.body.content;
+  let imageUrl = req.body.image
+
+  if(req.file){
+    imageUrl = req.file.path
+  }
+  if (!imageUrl) {
+    const error = new Error('No file picked')
+    error.statusCode = 422
+    throw error
+  }
 }
