@@ -13,11 +13,12 @@ exports.getPosts = (req, res, next) => {
     .countDocuments()
     .then((count) => {
       totalItems = count;
-      return Post.find()
+      return Post.find().populate('creator')
         .skip((Number(currentPage) - 1 )* perPage)
         .limit(perPage);
     })
     .then((posts) => {
+      console.log(posts)
       res.status(200).json({ message: "Fetched posts successfully", posts, totalItems });
     })
     .catch((err) => {
@@ -83,7 +84,7 @@ exports.postPosts = (req, res, next) => {
 
 exports.getPost = (req, res, next) => {
   const postId = req.params.postId;
-  Post.findById(postId)
+  Post.findById(postId).populate('creator')
     .then((post) => {
       if (!post) {
         const error = new Error("Could not find post");
