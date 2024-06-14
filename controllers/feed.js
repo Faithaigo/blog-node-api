@@ -6,8 +6,6 @@ const Post = require("../models/post");
 
 exports.getPosts = (req, res, next) => {
   const currentPage = req.query.page || 1;
-
-  console.log(currentPage)
   const perPage = 2;
   let totalItems;
   Post.find()
