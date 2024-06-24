@@ -4,14 +4,37 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const multer = require("multer");
+const {createHandler} = require('graphql-http/lib/use/express')
+const graphalSchema = require('./graphql/schema')
+const graphalResolver = require('./graphql/resolvers')
+
+const cors = require('cors')
+
+const expressPlayground = require("graphql-playground-middleware-express").default;
+
+
 
 const MONGODB_URI =
   "mongodb+srv://aigofaith:WxkHZ0KA7lwk41Xf@cluster0.pkwhwvs.mongodb.net/messages?w=majority";
 
-const feedRoutes = require("./routes/feed");
-const authRoutes = require("./routes/auth");
+
 
 const app = express();
+
+/**
+ * Set headers on any response that leaves the server (CORS)
+ */
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*"); //allow access from any domain
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST, PUT, PATCH, DELETE"); //allow specific http methods
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization"); //allow headers clients set
+  if(req.method === 'OPTIONS'){
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// app.use(cors());
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -42,21 +65,24 @@ app.use(multer({ storage: fileStorage, fileFilter }).single("image"));
 
 app.use("/images", express.static(path.join(__dirname, "images")));
 
-/**
- * Set headers on any response that leaves the server (CORS)
- */
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*"); //allow access from any domain
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST, PUT, PATCH, DELETE"); //allow specific http methods
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization"); //allow headers clients set
-  next();
-});
+app.use('/graphql', createHandler({
+  schema:graphalSchema,
+  rootValue:graphalResolver,
+  formatError(err){ //change error format
+    if(!err.originalError){
+      return err
+    }
+    const data = err.originalError.data;
+    const message = err.message || 'An error occured!';
+    const status = err.originalError.code || 500;
+    return {message, data, status}
 
-app.use("/feed", feedRoutes);
-app.use("/auth", authRoutes);
+  }
+}))
+
+app.get("/playground", expressPlayground({ endpoint: "/graphql" })); 
 
 app.use((error, req, res, next) => {
-  console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;
@@ -70,16 +96,7 @@ app.use((error, req, res, next) => {
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
-    const server = app.listen(8080);
-    
-    //old implemntation
-    //const io = require('socket.io')(server)
-
-    const io = require('./socket').init(server)
-
-    io.on("connection", (socket) => {
-      console.log("Client connected");
-    });
+   app.listen(8080);
   })
   .catch((error) => {
     console.log(error);
