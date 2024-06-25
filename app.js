@@ -8,7 +8,6 @@ const {createHandler} = require('graphql-http/lib/use/express')
 const graphalSchema = require('./graphql/schema')
 const graphalResolver = require('./graphql/resolvers')
 
-const cors = require('cors')
 
 const expressPlayground = require("graphql-playground-middleware-express").default;
 
