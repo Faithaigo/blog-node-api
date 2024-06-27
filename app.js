@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require('fs')
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -8,6 +9,7 @@ const {createHandler} = require('graphql-http/lib/use/express')
 const graphalSchema = require('./graphql/schema')
 const graphalResolver = require('./graphql/resolvers')
 const auth = require('./middlware/auth')
+const {clearImage} = require('./utils/file')
 
 const expressPlayground = require("graphql-playground-middleware-express").default;
 
@@ -20,7 +22,18 @@ const MONGODB_URI =
 
 const app = express();
 
-
+/**
+ * Set headers on any response that leaves the server (CORS)
+ */
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*"); //allow access from any domain
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST, PUT, PATCH, DELETE"); //allow specific http methods
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization"); //allow headers clients set
+  if(req.method === 'OPTIONS'){
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -53,18 +66,26 @@ app.use("/images", express.static(path.join(__dirname, "images")));
 
 app.use(auth);
 
-/**
- * Set headers on any response that leaves the server (CORS)
- */
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*"); //allow access from any domain
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST, PUT, PATCH, DELETE"); //allow specific http methods
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization"); //allow headers clients set
-  if(req.method === 'OPTIONS'){
-    return res.sendStatus(200);
+app.put('/post-image', (req, res, next)=>{
+  if (!req.isAuth) {
+    const error = new Error("Not authenticated");
+    error.code = 401;
+    throw error;
   }
-  next();
-});
+
+  //multer populates the file object with information about the file
+  if(!req.file){
+    return res.status(200).json({message:'No file provided!'})
+  }
+  if(req.body.oldPath){
+    clearImage(req.body.oldPath)
+  }
+  return res.status(201).json({message:'File stored.', filePath:req.file.path})
+})
+
+
+
+
 
 
 app.use('/graphql', createHandler({
@@ -98,6 +119,7 @@ app.use((error, req, res, next) => {
     data,
   });
 });
+
 
 mongoose
   .connect(MONGODB_URI)
