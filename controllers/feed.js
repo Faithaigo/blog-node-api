@@ -76,6 +76,7 @@ exports.postPosts = async (req, res, next) => {
         name: savedUser.name,
       },
     });
+    return savedUser
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;

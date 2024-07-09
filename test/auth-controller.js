@@ -26,7 +26,6 @@ describe('Auth Controlleer - Login', function () {
         }
 
         AuthController.login(req, {}, ()=>{}).then(result=>{
-            console.log(result)
             expect(result).to.be.an('error')
             expect(result).to.have.property('statusCode', 500)
             done() //mocha should wait to execute the test case until the promise has resolved
