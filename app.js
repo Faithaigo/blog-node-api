@@ -5,7 +5,6 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const multer = require("multer");
 
-const MONGODB_URI = "mongodb+srv://aigofaith:WxkHZ0KA7lwk41Xf@cluster0.pkwhwvs.mongodb.net/messages?w=majority";
 
 const feedRoutes = require("./routes/feed");
 const authRoutes = require("./routes/auth");
@@ -67,7 +66,7 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(MONGODB_URI)
+  .connect(process.env["MONGODB_URI"])
   .then(() => {
     const server = app.listen(8080);
     
